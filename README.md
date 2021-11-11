@@ -41,4 +41,4 @@ If you like **QRC**, please consider supporting it, even the smallest contributi
 [![Public Domain Mark](http://i.creativecommons.org/p/mark/1.0/88x31.png)](http://creativecommons.org/publicdomain/mark/1.0/)  
 This work (<span property="dct:title">QRC</span>, by [<span property="dct:title">hakerdefo</span>](https://github.com/hakerdefo/QRC)), identified by [<span property="dct:title">hakerdefo</span>](https://hakerdefo.github.io), is free of known copyright restrictions.  
 
-[QRC]:https://github.com/hakerdefo/QRC/archive/refs/heads/main.zip
+[QRC-main]:https://github.com/hakerdefo/QRC/archive/refs/heads/main.zip
