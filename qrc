@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+
+function QRC_MENU (){
+
+	type maim >/dev/null 2>&1 || { printf "\033c"; echo -e ""; echo -e "A required dependency \"maim\" is not present."; echo -e "\"maim\" is available for almost all Linux distros."; echo -e "Please install \"maim\" using your package manager."; echo -e ""; exit 1; }
+	type qrencode >/dev/null 2>&1 || { printf "\033c"; echo -e ""; echo -e "A required dependency \"qrencode\" is not present."; echo -e "\"qrencode\" is available for almost all Linux distros."; echo -e "Please install \"qrencode\" using your package manager."; echo -e ""; exit 1; }
+	type zbarimg >/dev/null 2>&1 || { printf "\033c"; echo -e ""; echo -e "A required dependency \"zbar\" is not present."; echo -e "\"zbar\" is available for almost all Linux distros."; echo -e "Please install \"zbar\" using your package manager."; echo -e ""; exit 1; }
+
+	printf "\033c"
+	echo -e ""
+	echo -e "******** QRC <> MENU ********"
+	echo -e ""
+	echo -e "Enter \"D\" To Decode A QR Code"
+	echo -e "Enter \"E\" To Encode A QR Code"
+	echo -e "Enter \"Q\" To Quit QRC Utility"
+	echo -e ""
+
+	read -er CHOICE
+	case "$CHOICE" in
+
+		"D" | "d")
+
+			WORK_DIRECTORY="/tmp/qrc"
+			test -d "$WORK_DIRECTORY"|| mkdir -p "$WORK_DIRECTORY"
+			DATE="$(date +%d%m%y-%H%M%S)"
+			SHORT_NAME="Shot-${DATE}.png"
+			NAME="${WORK_DIRECTORY}/${SHORT_NAME}"
+			SHORT_NAME_TEXT="Shot-${DATE}.txt"
+			NAME_TEXT="${WORK_DIRECTORY}/${SHORT_NAME_TEXT}"
+
+			printf "\033c"
+			echo -e ""
+			echo -e "Draw A Rectangle Around The QR Code By Click-Dragging The Left Mouse Button"
+			echo -e "Release The Mouse Button Once You Have Selected The Area Around The QR Code"
+			echo -e ""
+			read -r -s -p $'Press Any Key To Continue And Decode The QR Code...\n' -n1
+			printf "\033c"
+			sleep 1
+			maim -s --nokeyboard "${NAME}"
+			RETVAL=$?
+			if [[ "$RETVAL" == 1 ]]; then
+				printf "\033c"
+				sleep 1
+				echo -e ""
+				echo -e "Something Went South. QR Code Decoding Aborted."
+				echo -e ""
+				read -rsp $'Press Any Key To Return To Menu..\n' -n1
+				QRC_MENU
+			else
+				zbarimg "${NAME}" > "${NAME_TEXT}" 2>&1
+				QR_URL=$(grep 'QR-Code:' "${NAME_TEXT}" | cut -f2- -d:)
+				if [[ -z "$QR_URL" ]]; then
+					printf "\033c"
+					echo -e ""
+					echo -e "Oops!!! Failed To Decode The QR Code!!!"
+					echo -e "Please Ensure That The QR Code Is Valid"
+					echo -e "Make Sure That The Image Is Big & Clear"
+					echo -e ""
+					read -rsp $'Press Any Key To Return To Menu..\n' -n1
+					rm -r "${WORK_DIRECTORY}"
+					QRC_MENU
+				else
+					printf "\033c"
+					echo -e ""
+					echo -e "QR Code Text = $QR_URL"
+					echo -e ""
+					read -rsp $'Press Any Key To Return To Menu..\n' -n1
+					rm -r "${WORK_DIRECTORY}"
+					QRC_MENU
+				fi
+			fi
+			;;
+
+		"E" | "e")
+
+			printf "\033c"
+			echo -e ""
+			echo -e "Enter A URL Or A String TO Encode To QR Code"
+			echo -e ""
+			read -r -e URL_INPUT
+			if [[ -z "$URL_INPUT" ]]; then
+				printf "\033c"
+				echo -e ""
+				echo -e "Neither A URL Nor A String Was Entered!!!"
+				echo -e ""
+				read -rsp $'Press Any Key To Return To Menu..\n' -n1
+				QRC_MENU
+			else
+				echo -e ""
+				qrencode -m 2 -t ANSIUTF8 "$URL_INPUT"
+				echo -e ""
+				echo -e "Enter \"S\" To Save The QR Code To A File"
+				echo -e "Enter \"W\" To Continue Without Saving It"
+				echo -e ""
+
+				read -er ENTRY
+				case "$ENTRY" in
+
+					"S" | "s")
+
+						if type xdg-user-dir >/dev/null 2>&1; then
+							DIR_CHECK="$(xdg-user-dir PICTURES)"
+							if [ "${DIR_CHECK}" != "${HOME}" ]; then
+								QR_CODE_DIRECTORY="${DIR_CHECK}/QR_Codes"
+								test -d "${QR_CODE_DIRECTORY}" || mkdir -p "${QR_CODE_DIRECTORY}"
+							fi
+						else
+							QR_CODE_DIRECTORY="${HOME}/Pictures/QR_Codes"
+							test -d "${QR_CODE_DIRECTORY}" || mkdir -p "${QR_CODE_DIRECTORY}"
+						fi
+
+						DATE_2="$(date +%d%m%y-%H%M%S)"
+						QR_CODE_NAME="QR_CODE-${DATE_2}.png"
+						NAME_2="${QR_CODE_DIRECTORY}/${QR_CODE_NAME}"
+
+						qrencode -m 2 -t PNG "$URL_INPUT" -o "${NAME_2}"
+
+						printf "\033c"
+						echo -e ""
+						echo -e "QR Code Saved As \"${QR_CODE_NAME}\" In \"${QR_CODE_DIRECTORY}\""
+						echo -e ""
+						read -rsp $'Press Any Key To Return To Menu..\n' -n1
+						QRC_MENU
+						;;
+
+					"W" | "w")
+
+						QRC_MENU
+						;;
+
+					*)
+
+						printf "\033c"
+						echo -e ""
+						echo -e "\"$ENTRY\" Is An Invalid Option!!!"
+						echo -e ""
+						echo -e "Correct Options To Choose Are Either \"S\" Or \"W\""
+						echo -e ""
+						read -rsp $'Press Any Key To Return To Menu..\n' -n1
+						QRC_MENU
+						;;
+
+				esac
+
+			fi
+			;;
+
+		"Q" | "q")
+
+			printf "\033c"
+			exit 0
+			;;
+
+		*)
+
+			printf "\033c"
+			echo -e ""
+			echo -e "\"$URL_INPUT\" Is An Invalid Option!!!"
+			echo -e ""
+			echo -e "Correct Options To Choose Are Either \"D\", \"E\" or \"Q\""
+			echo -e ""
+			read -rsp $'Press Any Key To Return To Menu..\n' -n1
+			QRC_MENU
+			;;
+
+	esac
+
+}
+
+while :
+do
+
+	QRC_MENU
+
+done
